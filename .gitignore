@@ -1,0 +1,35 @@
+# Compiled binaries
+*.out
+a.out
+rev_matcher
+
+# Object files
+*.o
+*.obj
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Static and dynamic libraries
+*.a
+*.lib
+*.so
+*.dylib
+
+# Executables
+*.exe
+*.app
+
+# IDE and editor files
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
