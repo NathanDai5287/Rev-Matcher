@@ -8,8 +8,16 @@
 #include "obd_io_utils.h"
 #include "gear_utils.h"
 
+// ELM327 initialization commands
+static const char* const ELM327_RESET = "ATZ\r";
+static const char* const ELM327_DISABLE_ECHO = "ATE0\r";
+static const char* const ELM327_DISABLE_LINEFEEDS = "ATL0\r";
+static const char* const ELM327_DISABLE_SPACES = "ATS0\r";
+static const char* const ELM327_DISABLE_HEADERS = "ATH0\r";
+static const char* const ELM327_SET_AUTO_PROTOCOL = "ATSP0\r";
+
 int main() {
-	int fd = open("/dev/tty.usbserial", O_RDWR | O_NOCTTY);
+	int fd = open("/dev/tty.usbserial-D3A15F7V", O_RDWR | O_NOCTTY);
 	if (fd < 0) {
 		perror("open");
 		return 1;
@@ -19,8 +27,9 @@ int main() {
 	memset(&tty, 0, sizeof(tty));
 	tcgetattr(fd, &tty);
 
-	cfsetispeed(&tty, B38400);
-	cfsetospeed(&tty, B38400);
+	const int baud_rate = B115200;
+	cfsetispeed(&tty, baud_rate);
+	cfsetospeed(&tty, baud_rate);
 
 	tty.c_cflag = CS8 | CREAD | CLOCAL;
 	tty.c_iflag = 0;
@@ -30,15 +39,21 @@ int main() {
 	tcsetattr(fd, TCSANOW, &tty);
 
 	// initialize ELM327 adapter
-	const char* reset_adapter = "ATZ\r";
-	const char* disable_echo = "ATE0\r";
+	const char* init_commands[] = {
+		ELM327_RESET,
+		ELM327_DISABLE_ECHO,
+		ELM327_DISABLE_LINEFEEDS,
+		ELM327_DISABLE_SPACES,
+		ELM327_DISABLE_HEADERS,
+		ELM327_SET_AUTO_PROTOCOL
+	};
 
-	write(fd, reset_adapter, strlen(reset_adapter));
-	sleep(1);
-	write(fd, disable_echo, strlen(disable_echo));
-	sleep(1);
+	for (int i = 0; i < 6; i++) {
+		const char* command = init_commands[i];
+		write(fd, command, strlen(command));
+		usleep(200000);
+	}
 
-	// get rpm
 	while (true) {
 		double rpm = get_rpm(&fd);
 		double mph = get_vehicle_speed(&fd);
@@ -66,6 +81,7 @@ int main() {
 			(int) round(((downshift_rpm - rpm) / rpm) * 100)
 		);
 
+		fflush(stdout);
 		usleep(200000);
 	}
 
